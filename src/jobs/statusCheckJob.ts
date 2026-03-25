@@ -1,4 +1,5 @@
 import { pool } from '../config/database';
+import { TransactionStatus } from '../models/transaction';
 
 /**
  * Status Check Job
@@ -11,8 +12,9 @@ export async function runStatusCheckJob(): Promise<void> {
   const result = await pool.query(
     `SELECT id, reference_number, created_at
      FROM transactions
-     WHERE status = 'pending'
-       AND created_at < NOW() - INTERVAL '${thresholdMinutes} minutes'`
+     WHERE status = $1
+       AND created_at < NOW() - INTERVAL '${thresholdMinutes} minutes'`,
+    [TransactionStatus.Pending]
   );
 
   if (result.rows.length === 0) {

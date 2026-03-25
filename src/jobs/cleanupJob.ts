@@ -1,4 +1,5 @@
 import { pool } from '../config/database';
+import { TransactionStatus } from '../models/transaction';
 
 /**
  * Cleanup Job
@@ -11,8 +12,9 @@ export async function runCleanupJob(): Promise<void> {
 
   const result = await pool.query(
     `DELETE FROM transactions
-     WHERE status IN ('completed', 'failed')
-       AND created_at < NOW() - INTERVAL '${retentionDays} days'`
+     WHERE status IN ($1, $2)
+       AND created_at < NOW() - INTERVAL '${retentionDays} days'`,
+    [TransactionStatus.Completed, TransactionStatus.Failed]
   );
 
   console.log(`[cleanup] Deleted ${result.rowCount} old transaction(s) older than ${retentionDays} days`);
