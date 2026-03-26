@@ -73,6 +73,10 @@ export const transactionWorker = new Worker<
           transactionId,
           TransactionStatus.Completed,
         );
+        await notifyTransactionWebhook(transactionId, "transaction.completed", {
+          transactionModel,
+          webhookService,
+        });
 
         // Fetch user and send email
         const transaction = await transactionModel.findById(transactionId);
@@ -116,6 +120,10 @@ export const transactionWorker = new Worker<
           transactionId,
           TransactionStatus.Completed,
         );
+        await notifyTransactionWebhook(transactionId, "transaction.completed", {
+          transactionModel,
+          webhookService,
+        });
 
         // Fetch user and send email
         const transaction = await transactionModel.findById(transactionId);
