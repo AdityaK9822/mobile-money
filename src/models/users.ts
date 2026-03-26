@@ -1,53 +1,31 @@
+import { pool } from "../config/database";
+
 export interface User {
   id: string;
-  phone_number: string;
+  phoneNumber: string;
+  kycLevel: string;
   email?: string;
-  kyc_level: 'unverified' | 'basic' | 'full';
-  role_name?: string;
-  created_at: Date;
-  updated_at: Date;
-  
-  // 2FA fields
-  two_factor_secret?: string;
-  two_factor_enabled: boolean;
-  two_factor_verified: boolean;
-  backup_codes?: BackupCode[];
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-export interface BackupCode {
-  id: string;
-  code_hash: string;
-  used: boolean;
-  created_at: Date;
-  used_at?: Date;
-}
+export class UserModel {
+  async findById(id: string): Promise<User | null> {
+    const result = await pool.query("SELECT * FROM users WHERE id = $1", [id]);
+    if (result.rows.length === 0) return null;
+    
+    const row = result.rows[0];
+    return {
+      id: row.id,
+      phoneNumber: row.phone_number,
+      kycLevel: row.kyc_level,
+      email: row.email,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    };
+  }
 
-export interface CreateUserRequest {
-  phone_number: string;
-  email?: string;
-  kyc_level?: 'unverified' | 'basic' | 'full';
-  role_name?: string;
-}
-
-export interface UpdateUserRequest {
-  email?: string;
-  kyc_level?: 'unverified' | 'basic' | 'full';
-  role_name?: string;
-  two_factor_secret?: string;
-  two_factor_enabled?: boolean;
-  two_factor_verified?: boolean;
-}
-
-export interface Enable2FARequest {
-  two_factor_secret: string;
-  backup_codes: string[];
-}
-
-export interface Verify2FARequest {
-  token: string;
-}
-
-export interface BackupCodeVerification {
-  valid: boolean;
-  codeId?: string;
+  async updateEmail(id: string, email: string): Promise<void> {
+    await pool.query("UPDATE users SET email = $1 WHERE id = $2", [email, id]);
+  }
 }
