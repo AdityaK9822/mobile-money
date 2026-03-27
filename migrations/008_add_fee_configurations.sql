@@ -51,26 +51,32 @@ CREATE INDEX IF NOT EXISTS idx_fee_audit_config_id ON fee_configuration_audit(fe
 CREATE INDEX IF NOT EXISTS idx_fee_audit_changed_at ON fee_configuration_audit(changed_at);
 CREATE INDEX IF NOT EXISTS idx_fee_audit_changed_by ON fee_configuration_audit(changed_by);
 
--- Insert default fee configuration from current env vars
-INSERT INTO fee_configurations (
-  name, 
-  description, 
-  fee_percentage, 
-  fee_minimum, 
-  fee_maximum, 
-  created_by, 
-  updated_by
-) 
-SELECT 
-  'default',
-  'Default fee configuration migrated from environment variables',
-  1.5,  -- Default FEE_PERCENTAGE
-  50,   -- Default FEE_MINIMUM  
-  5000, -- Default FEE_MAXIMUM
-  u.id,
-  u.id
-FROM users u 
-JOIN roles r ON u.role_id = r.id 
-WHERE r.name = 'admin' 
-LIMIT 1
-ON CONFLICT (name) DO NOTHING;
+-- Seed a default fee configuration using any existing user as the author.
+-- Safe to skip if no users exist yet (e.g. fresh CI database).
+DO $$
+DECLARE
+  v_user_id UUID;
+BEGIN
+  SELECT id INTO v_user_id FROM users LIMIT 1;
+
+  IF v_user_id IS NOT NULL THEN
+    INSERT INTO fee_configurations (
+      name,
+      description,
+      fee_percentage,
+      fee_minimum,
+      fee_maximum,
+      created_by,
+      updated_by
+    ) VALUES (
+      'default',
+      'Default fee configuration migrated from environment variables',
+      1.5,   -- Default FEE_PERCENTAGE
+      50,    -- Default FEE_MINIMUM
+      5000,  -- Default FEE_MAXIMUM
+      v_user_id,
+      v_user_id
+    )
+    ON CONFLICT (name) DO NOTHING;
+  END IF;
+END $$;
