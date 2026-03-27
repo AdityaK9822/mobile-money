@@ -16,13 +16,13 @@ module.exports = {
     "!src/**/__tests__/**",
   ],
   coverageDirectory: "coverage",
-  coverageReporters: ["text", "lcov", "html"],
+  coverageReporters: ["text", "text-summary", "lcov", "html", "json-summary"],
   coverageThreshold: {
     global: {
-      branches: 0,
-      functions: 2,
-      lines: 4,
-      statements: 4,
+      branches: 25,
+      functions: 35,
+      lines: 30,
+      statements: 30,
     },
   },
   moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json", "node"],
