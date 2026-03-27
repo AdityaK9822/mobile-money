@@ -51,26 +51,27 @@ CREATE INDEX IF NOT EXISTS idx_fee_audit_config_id ON fee_configuration_audit(fe
 CREATE INDEX IF NOT EXISTS idx_fee_audit_changed_at ON fee_configuration_audit(changed_at);
 CREATE INDEX IF NOT EXISTS idx_fee_audit_changed_by ON fee_configuration_audit(changed_by);
 
--- Insert default fee configuration from current env vars
+-- Insert default fee configuration from current env vars.
+-- Uses the first available user as created_by/updated_by.
+-- Skipped silently if no users exist yet (fresh database).
+-- NOTE: the original JOIN on `roles` was removed because the roles table
+-- and users.role_id column are not guaranteed to exist at this migration step.
 INSERT INTO fee_configurations (
-  name, 
-  description, 
-  fee_percentage, 
-  fee_minimum, 
-  fee_maximum, 
-  created_by, 
+  name,
+  description,
+  fee_percentage,
+  fee_minimum,
+  fee_maximum,
+  created_by,
   updated_by
-) 
-SELECT 
+)
+SELECT
   'default',
   'Default fee configuration migrated from environment variables',
   1.5,  -- Default FEE_PERCENTAGE
-  50,   -- Default FEE_MINIMUM  
+  50,   -- Default FEE_MINIMUM
   5000, -- Default FEE_MAXIMUM
-  u.id,
-  u.id
-FROM users u 
-JOIN roles r ON u.role_id = r.id 
-WHERE r.name = 'admin' 
-LIMIT 1
+  (SELECT id FROM users LIMIT 1),
+  (SELECT id FROM users LIMIT 1)
+WHERE EXISTS (SELECT 1 FROM users)
 ON CONFLICT (name) DO NOTHING;
