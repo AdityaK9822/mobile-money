@@ -147,22 +147,8 @@ export const errorHandler = (
   res: Response,
   _next: NextFunction,
 ) => {
-  // Extract locale from request headers, default to 'en'
-  const acceptLanguage = req.headers["accept-language"] || "en";
-  const locale = (acceptLanguage.split(",")[0] || "en").split("-")[0].toLowerCase() as
-    | "en"
-    | "fr"
-    | "es"
-    | "pt";
-
-  // Determine error code
-  const errorCode = err.code || ERROR_CODES.INTERNAL_ERROR;
-
-  // Get localized message
-  const localizedMessage = getLocalizedMessage(errorCode, locale);
-
-  // Get English message as fallback
-  const englishMessage = getLocalizedMessage(errorCode, "en");
+  (res.locals as Record<string, unknown>)["__criticalError"] = err;
+  console.error(err.stack);
 
   // Determine HTTP status code
   const statusCode = err.statusCode || getHttpStatus(errorCode) || 500;

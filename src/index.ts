@@ -27,6 +27,7 @@ import { contactsRoutes } from "./routes/contacts";
 import { reportsRoutes } from "./routes/reports";
 import { createKYCRoutes } from "./routes/kycRoutes";
 import { vaultRoutes } from "./routes/vaults";
+import { adminRoutes } from "./routes/admin";
 import { errorHandler } from "./middleware/errorHandler";
 import {
   connectRedis,
@@ -42,13 +43,16 @@ import {
   haltOnTimedout,
   timeoutErrorHandler,
 } from "./middleware/timeout";
+import { requireAuth } from "./middleware/auth";
 import { responseTime } from "./middleware/responseTime";
 import { requestId } from "./middleware/requestId";
 import { metricsMiddleware } from "./middleware/metrics";
 import { validateStellarNetwork, logStellarNetwork } from "./config/stellar";
-import { sessionAnomalyLogger } from "./services/logger";
+import { criticalErrorNotifier, sessionAnomalyLogger } from "./services/loggers";
 import { HealthCheckResponse, ReadinessCheckResponse } from "./types/api";
 import sep31Router from "./stellar/sep31";
+import sep24Router from "./stellar/sep24";
+import { createSep12Router } from "./stellar/sep12";
 
 dotenv.config();
 
@@ -118,6 +122,7 @@ app.use(
 app.use(limiter);
 app.use(responseTime);
 app.use(requestId);
+app.use(criticalErrorNotifier());
 
 // Session configuration with Redis store
 const sessionSecret =
@@ -218,10 +223,10 @@ app.use("/api/stats", statsRoutes);
 app.use("/api/contacts", contactsRoutes);
 app.use("/api/reports", reportsRoutes);
 app.use("/api/kyc", createKYCRoutes(pool));
+app.use("/api/admin", requireAuth, adminRoutes);
 app.use("/sep31", sep31Router);
-
-// SEP-24 Interactive Deposit/Withdrawal Flow
 app.use("/sep24", sep24Router);
+app.use("/sep12", createSep12Router(pool));
 
 app.use(
   (
